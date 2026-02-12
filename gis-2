@@ -198,9 +198,5 @@ geography: ST_DWithin(...) -> boolean, ST_Distance(...) -> double precision
 
 
 Geometry: velocissimo k-NN con indice GIST.
-
-Geography: <-> non funziona, si usa ST_DWithin + ST_Distance.
-
+Geography: <-> funziona da PostGIS 3+, altrimenti si usa ST_DWithin + ST_Distance.
 Indicizzazione: basta indice GIST su position.
-
-Se vuoi, posso anche fare una tabella riassuntiva unica, con tutte le funzioni, signature, geometry/geography, indicizzabilità e consigli pratici. Questo è molto utile come cheat sheet.
