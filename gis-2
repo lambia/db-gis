@@ -117,7 +117,7 @@ Geography: non indicizzabile.
 Geometry: indicizzabile con GIST.
 Uso: visualizzazione, tolleranza spaziale, analisi aree.
 
-5. Contare quanti punti ci sono in un'area
+5. Contare quanti punti ci sono in una area
 
 Geometry
 SELECT COUNT(*)
