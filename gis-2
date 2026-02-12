@@ -1,0 +1,206 @@
+1. Calcolare la distanza da Torino
+
+Geometry
+
+SELECT id,
+       ST_Distance(
+           position,
+           ST_SetSRID(ST_MakePoint(7.6869, 45.0703), 4326)
+       ) AS distanza
+FROM posts;
+
+Per: Geography
+
+SELECT id,
+       ST_Distance(
+           position::geography,
+           ST_SetSRID(ST_MakePoint(7.6869, 45.0703), 4326)::geography
+       ) AS distanza_m
+FROM posts;
+
+
+Signature
+
+ST_Distance(geomA geometry, geomB geometry) -> double precision
+ST_Distance(geomA geography, geomB geography) -> double precision
+
+
+Non indicizzabile, serve solo per calcolo/ordinamento.
+
+2. Trovare punti ad almeno 100 km da Torino
+
+Geometry
+
+SELECT *
+FROM posts
+WHERE ST_Distance(
+    position,
+    ST_SetSRID(ST_MakePoint(7.6869, 45.0703), 4326)
+) >= 100000;
+
+
+Geography
+
+SELECT *
+FROM posts
+WHERE ST_Distance(
+    position::geography,
+    ST_SetSRID(ST_MakePoint(7.6869, 45.0703), 4326)::geography
+) >= 100000;
+
+Signature
+
+ST_Distance(geomA geometry, geomB geometry) -> double precision
+ST_Distance(geomA geography, geomB geography) -> double precision
+
+Non indicizzabile.
+
+3. Ordinare i punti per distanza da Torino
+
+Geometry
+
+SELECT *
+FROM posts
+ORDER BY ST_Distance(
+          position,
+          ST_SetSRID(ST_MakePoint(7.6869, 45.0703), 4326)
+);
+
+
+Geography
+
+SELECT *
+FROM posts
+ORDER BY ST_Distance(
+          position::geography,
+          ST_SetSRID(ST_MakePoint(7.6869, 45.0703), 4326)::geography
+);
+
+
+Signature
+
+ST_Distance(geomA geometry, geomB geometry) -> double precision
+ST_Distance(geomA geography, geomB geography) -> double precision
+
+Non indicizzabile, ordinamento su dataset grandi lento senza filtraggio preliminare.
+
+4. Creare un buffer di 100 km e cercare punti dentro
+
+Geometry
+
+SELECT *
+FROM posts
+WHERE ST_Intersects(
+    position,
+    ST_Buffer(ST_SetSRID(ST_MakePoint(7.6869, 45.0703), 4326), 100000)
+);
+
+
+Geography
+
+SELECT *
+FROM posts
+WHERE ST_Intersects(
+    position::geography,
+    ST_Buffer(ST_SetSRID(ST_MakePoint(7.6869, 45.0703), 4326)::geography, 100000)
+);
+
+Signature
+
+ST_Buffer(geom geometry, radius float8) -> geometry
+ST_Buffer(geom geography, radius float8) -> geography
+
+ST_Intersects(geomA geometry, geomB geometry) -> boolean
+ST_Intersects(geomA geography, geomB geography) -> boolean
+
+Geography: non indicizzabile.
+Geometry: indicizzabile con GIST.
+Uso: visualizzazione, tolleranza spaziale, analisi aree.
+
+5. Contare quanti punti ci sono in un'area
+
+Geometry
+SELECT COUNT(*)
+FROM posts
+WHERE ST_Intersects(
+    position,
+    ST_Buffer(ST_SetSRID(ST_MakePoint(7.6869, 45.0703), 4326), 100000)
+);
+
+
+Geography
+SELECT COUNT(*)
+FROM posts
+WHERE ST_Intersects(
+    position::geography,
+    ST_Buffer(ST_SetSRID(ST_MakePoint(7.6869, 45.0703), 4326)::geography, 100000)
+);
+
+Indicizzazione: solo geometry GIST.
+
+6. Trovare punti entro 100 km da Torino (ST_DWithin)
+
+Geometry
+SELECT *
+FROM posts
+WHERE ST_DWithin(
+    position,
+    ST_SetSRID(ST_MakePoint(7.6869, 45.0703), 4326),
+    100000
+);
+
+
+Geography
+SELECT *
+FROM posts
+WHERE ST_DWithin(
+    position::geography,
+    ST_SetSRID(ST_MakePoint(7.6869, 45.0703), 4326)::geography,
+    100000
+);
+
+
+Signature
+ST_DWithin(geomA geometry, geomB geometry, distance float8) -> boolean
+ST_DWithin(geomA geography, geomB geography, distance float8) -> boolean
+
+Indicizzabile con GIST.
+Uso consigliato per filtri spaziali veloci.
+
+7. Trovare i 5 punti più vicini a Torino (k-NN)
+
+Geometry (planare, SRID 4326)
+
+SELECT *
+FROM posts
+ORDER BY position <-> ST_SetSRID(ST_MakePoint(7.6869, 45.0703), 4326)
+LIMIT 5;
+
+Geography
+
+SELECT *
+FROM posts
+WHERE ST_DWithin(
+    position::geography,
+    ST_SetSRID(ST_MakePoint(7.6869, 45.0703), 4326)::geography,
+    1000000  -- filtro preliminare
+)
+ORDER BY ST_Distance(
+          position::geography,
+          ST_SetSRID(ST_MakePoint(7.6869, 45.0703), 4326)::geography
+)
+LIMIT 5;
+
+Signature
+
+geometry: <-> operator per k-NN -> float8  
+geography: ST_DWithin(...) -> boolean, ST_Distance(...) -> double precision
+
+
+Geometry: velocissimo k-NN con indice GIST.
+
+Geography: <-> non funziona, si usa ST_DWithin + ST_Distance.
+
+Indicizzazione: basta indice GIST su position.
+
+Se vuoi, posso anche fare una tabella riassuntiva unica, con tutte le funzioni, signature, geometry/geography, indicizzabilità e consigli pratici. Questo è molto utile come cheat sheet.

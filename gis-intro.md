@@ -108,3 +108,4 @@ WHERE ST_DWithin(
     ST_SetSRID(ST_MakePoint(7.6869, 45.0703), 4326)::geography,
     5000  -- 5 km
 );
+
