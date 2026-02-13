@@ -8,7 +8,7 @@ SELECT
     ST_AsText(posizione) AS posizione_testo,
     
     -- Coordinate in lat/lon (SRID 4326)
-    ST_AsText(ST_Transform(posizione, 4326)) AS posizione_latlon,
+    ST_AsText(ST_Transform(posizione, 4326)) AS posizione_coord,
     
     -- Distanza da Torino (coordinate centro approssimativo 1500000, 5100000 in 3003)
     ST_Distance(
